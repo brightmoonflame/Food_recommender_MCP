@@ -32,8 +32,10 @@ logger = logging.getLogger(__name__)
 # 加载环境变量
 load_dotenv()
 API_KEY = os.getenv("BAIDU_MAPS_API_KEY", "")
-if not API_KEY:
+if not API_KEY or API_KEY == "your_actual_baidu_maps_api_key_here" or API_KEY == "your_actual_api_key_here" or API_KEY == "BAIDU_MAPS_API_KEY":
     logger.error("请设置环境变量 BAIDU_MAPS_API_KEY 为你的百度地图 API Key")
+    logger.error("当前的 API Key 是无效的: %s", API_KEY)
+    logger.error("请在 .env 文件中配置正确的百度地图 API Key")
     raise RuntimeError("请设置环境变量 BAIDU_MAPS_API_KEY 为你的百度地图 API Key")
 
 API_URL = "https://api.map.baidu.com"
@@ -1145,7 +1147,8 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--sse":
         # SSE 模式：通过 HTTP 端点暴露服务器
         # 端口通过环境变量 MCP_PORT 配置，默认 8000
-        port = 8000
+        # 阿里云函数计算使用 PORT 环境变量
+        port = int(os.environ.get("MCP_PORT", os.environ.get("PORT", "8000")))
         if "--port" in sys.argv:
             port_idx = sys.argv.index("--port")
             if port_idx + 1 < len(sys.argv):
