@@ -88,7 +88,7 @@ python test_mcp.py
   "mcpServers": {
     "food-recommender": {
       "command": "python",
-      "args": ["g:\\food_mcp\\mcp_server.py"]
+      "args": ["Food_recommender_MCP\\mcp_server.py"]
     }
   }
 }
@@ -108,7 +108,7 @@ python mcp_server.py --sse --port 8000
 ```json
 {
   "mcpServers": {
-    "food-recommender": {
+    "Food_recommender_MCP": {
       "url": "http://localhost:8000/sse"
     }
   }
@@ -135,7 +135,7 @@ python test_sse_simple.py
     "food-recommender": {
       "command": "python",
       "args": [
-        "g:\\food_mcp\\mcp_server.py"
+        "Food_recommender_MCP\\mcp_server.py"
       ],
       "env": {
         "BAIDU_MAPS_API_KEY": "your_api_key_here"
@@ -157,7 +157,7 @@ python test_sse_simple.py
     "food-recommender": {
       "command": "python",
       "args": [
-        "g:\\food_mcp\\mcp_server.py"
+        "Food_recommender_MCP\\mcp_server.py"
       ]
     }
   }
@@ -177,7 +177,7 @@ python test_sse_simple.py
     "food-recommender": {
       "command": "C:/ProgramData/Anaconda3/envs/steam_mcp/python.exe",
       "args": [
-        "g:\\food_mcp\\mcp_server.py"
+        "Food_recommender_MCP\\mcp_server.py"
       ]
     }
   }
