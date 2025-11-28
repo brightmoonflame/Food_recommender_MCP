@@ -1148,7 +1148,7 @@ if __name__ == "__main__":
         # SSE 模式：通过 HTTP 端点暴露服务器
         # 端口通过环境变量 MCP_PORT 配置，默认 8000
         # 阿里云函数计算使用 PORT 环境变量
-        port = int(os.environ.get("MCP_PORT", os.environ.get("PORT", "8000")))
+        port = int(os.environ.get("MCP_PORT", os.environ.get("PORT", "9000")))
         if "--port" in sys.argv:
             port_idx = sys.argv.index("--port")
             if port_idx + 1 < len(sys.argv):
