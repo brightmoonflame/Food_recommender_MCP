@@ -54,5 +54,9 @@ echo "========================================" >&2
 echo "🚀 启动 MCP 服务器" >&2
 echo "========================================" >&2
 
+# 设置端口环境变量（阿里云函数计算会传入 PORT 环境变量）
+export PORT=${PORT:-9000}
+
 # 使用 exec 替换当前进程
-exec $PYTHON mcp_server.py --sse --port 9000
+exec $PYTHON mcp_server.py
+
