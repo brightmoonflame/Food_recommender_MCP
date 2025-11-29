@@ -13,7 +13,7 @@ import math
 import re
 from typing import List, Dict, Any, Optional, Union
 from dotenv import load_dotenv
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 from functools import lru_cache
 import time
 from datetime import datetime, timedelta
@@ -1143,99 +1143,31 @@ def _generate_static_map_url(
 
 # ========== 运行服务器 ==========
 
-if __name__ == "__main__":
-    import sys
+def main():
+    """启动MCP服务器"""
+    logger.info("="*60)
+    logger.info("🍜 美食推荐MCP服务器启动")
+    logger.info("="*60)
     
-    # 检查是否指定了运行模式
-    if len(sys.argv) > 1 and sys.argv[1] == "--sse":
-        # SSE 模式：通过 HTTP 端点暴露服务器
-        # 端口通过环境变量 MCP_PORT 配置，默认 8000
-        # 阿里云函数计算使用 PORT 环境变量
-        port = int(os.environ.get("MCP_PORT", os.environ.get("PORT", "9000")))
-        if "--port" in sys.argv:
-            port_idx = sys.argv.index("--port")
-            if port_idx + 1 < len(sys.argv):
-                port = int(sys.argv[port_idx + 1])
-        
-        # 设置环境变量供 FastMCP 使用
-        os.environ["MCP_PORT"] = str(port)
-        os.environ["MCP_HOST"] = "0.0.0.0"
-        
-        logger.info(f"[SSE模式] 启动 MCP 服务器")
-        logger.info(f"[SSE模式] 监听地址: http://localhost:{port}/sse")
-        logger.info(f"[SSE模式] 网络地址: http://0.0.0.0:{port}/sse")
-        logger.info(f"[SSE模式] 使用 Ctrl+C 停止服务器")
-        logger.info("-" * 50)
-        
-        # 如果可以获取到 ASGI app，则显式调用 uvicorn.run 来绑定主机与端口，
-        # 否则使用 mcp.run() 回退（兼容旧版本 FastMCP 的行为）
-        try:
-            import uvicorn
+    # 获取端口配置（阿里云函数计算使用 PORT 环境变量）
+    port = int(os.environ.get("MCP_PORT", os.environ.get("PORT", "9000")))
+    
+    logger.info(f"[SSE模式] 启动 MCP 服务器")
+    logger.info(f"[SSE模式] 监听地址: http://localhost:{port}/sse")
+    logger.info(f"[SSE模式] 网络地址: http://0.0.0.0:{port}/sse")
+    logger.info(f"[SSE模式] 使用 Ctrl+C 停止服务器")
+    logger.info("-" * 60)
+    
+    # 启动MCP服务器
+    # FastMCP 2.5+ 版本支持 host/port 参数
+    mcp.run(
+        transport="sse",
+        host="0.0.0.0",
+        port=port,
+        path="/sse",
+        log_level="info",
+    )
 
-            # 尝试从 mcp 实例获取常见的 ASGI app 属性
-            app = getattr(mcp, "asgi", None) or getattr(mcp, "asgi_app", None) or getattr(mcp, "app", None)
-            if app is not None:
-                # uvicorn.run 将替代 mcp.run 并确保正确绑定到 MCP_HOST/MCP_PORT
-                logger.info("使用 uvicorn 运行 ASGI 应用 (0.0.0.0:%s)", port)
-                uvicorn.run(app, host=os.environ.get("MCP_HOST", "0.0.0.0"), port=port)
-            else:
-                logger.info("Couldn't obtain ASGI app from FastMCP; will attempt to run mcp.run bound to MCP_HOST:MCP_PORT")
 
-                bind_host = os.environ.get("MCP_HOST", "0.0.0.0")
-                bind_port = port
-
-                # 优先尝试与示例相同的显式签名：host/port/path/log_level
-                try:
-                    logger.info("尝试使用显式签名 mcp.run(host=%s, port=%s, path=/sse)", bind_host, bind_port)
-                    mcp.run(
-                        transport="sse",
-                        host=bind_host,
-                        port=bind_port,
-                        path="/sse",
-                        log_level="info",
-                    )
-                    ran = True
-                except TypeError as te:
-                    logger.debug("显式签名 mcp.run 不被支持: %s", te)
-                    ran = False
-                except Exception as e:
-                    logger.warning("显式 mcp.run 启动时异常，将回退尝试其他签名: %s", e)
-                    ran = False
-
-                # 如果显式签名未能运行，再尝试其他常见签名
-                if not ran:
-                    tried = []
-                    attempts = [
-                        {"transport": "sse", "host": bind_host, "port": bind_port},
-                        {"transport": "sse", "addr": bind_host, "port": bind_port},
-                        {"transport": "sse", "bind": f"{bind_host}:{bind_port}"},
-                        {"transport": "sse", "port": bind_port},
-                        {"transport": "sse"},
-                    ]
-
-                    for kwargs in attempts:
-                        try:
-                            logger.info("尝试使用 mcp.run 参数: %s", kwargs)
-                            mcp.run(**kwargs)
-                            ran = True
-                            break
-                        except TypeError as te:
-                            logger.debug("mcp.run 不支持该签名: %s, 错误: %s", kwargs, te)
-                            tried.append((kwargs, str(te)))
-                        except Exception as e:
-                            logger.warning("调用 mcp.run 时异常 (%s) 使用签名 %s", e, kwargs)
-                            tried.append((kwargs, str(e)))
-
-                    if not ran:
-                        logger.error("所有 mcp.run 绑定尝试失败: %s", tried)
-                        try:
-                            mcp.run(transport="sse")
-                        except Exception as e:
-                            logger.exception("回退 mcp.run() 也失败: %s", e)
-        except Exception as e:
-            logger.warning("使用 uvicorn 启动时出现异常 (%s)，回退到 mcp.run()。", str(e))
-            mcp.run(transport="sse")
-    else:
-        # 标准 stdio 模式（用于 Claude Desktop 等客户端）
-        logger.info("[Stdio模式] 启动 MCP 服务器")
-        mcp.run()
+if __name__ == "__main__":
+    main()
